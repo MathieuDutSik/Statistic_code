@@ -3,6 +3,10 @@
 
 
 
+
+
+
+
 /*
   We have a number of function f_j for 1 <= j <= m
   A number of values x_i for 1 <= i <= n and a fitting value b_i
@@ -16,11 +20,15 @@
   with g(x, y) = exp(-(x-y)^2 / 2 \sigma^2)
   ---
   The classical algorithm is the half-quadratic optimization.
+  However, it may not be relevant here as we do not have a second term.
+  Half-Quadratic is only for 
  */
 template<typename T>
 std::vector<T> Computre_Regression(MyVector<T> const& ListValue, MyMatrix<T> const& ListFct, double const& sigma)
 {
-
+  auto ComputeGradient=[&](MyVector<T> const& beta) -> MyVector<T> {
+                                                                    
+  };
 
 }
 
