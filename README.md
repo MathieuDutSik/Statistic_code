@@ -1,2 +1,3 @@
 # Statistic_code
-A few statistical code in C++
+A few statistical code in C++ put together.
+
