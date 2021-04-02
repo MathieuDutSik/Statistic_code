@@ -2,7 +2,7 @@
 #define INCLUDE_CORRENTROPY_REGRESSION_H
 
 
-
+#include "MAT_Matrix.h"
 
 
 
@@ -36,8 +36,16 @@
   The direction is computed as - b Q^{-1}
  */
 template<typename T>
-std::vector<T> Compute_CorrEntropy_Regression(MyVector<T> const& B, MyMatrix<T> const& M, double const& sigma)
+MyVector<T> Compute_CorrEntropy_Regression(MyVector<T> const& B, MyMatrix<T> const& M, double const& sigma)
 {
+  int n = M.rows();
+  int m = M.cols();
+  int n_B = B.size();
+  if (n != n_B) {
+    std::cerr << "We should have n=" << n << " n_B=" << n_B << " equal\n";
+    throw TerminalException{1};
+  }
+  //
   double alpha = 1 / (2 * sigma * sigma);
   auto g=[&](T const& x) -> T {
     return exp(- alpha  * x * x);
@@ -49,8 +57,6 @@ std::vector<T> Compute_CorrEntropy_Regression(MyVector<T> const& B, MyMatrix<T> 
     return (-2 * alpha  + 4 * alpha * alpha * x * x) * exp(- alpha  * x * x);
   };
   //
-  int n = M.rows();
-  int m = M.cols();
   auto f=[&](MyVector<T> const& beta) -> T {
     T sum=0;
     for (int i=0; i<n; i++) {
@@ -98,13 +104,13 @@ std::vector<T> Compute_CorrEntropy_Regression(MyVector<T> const& B, MyMatrix<T> 
   int n_iter = 100;
   int i_iter=0;
   while(true) {
-    T val = f(beta);
-    std::cerr << "i_iter=" << i_iter << " val=" << val << "\n";
+    T eVal = f(beta);
+    std::cerr << "i_iter=" << i_iter << " eVal=" << eVal << "\n";
     T eFact = 0.8;
-    auto DirUpgrade=[&](MyVector<T> const& edir) -> {
+    auto DirUpgrade=[&](MyVector<T> const& edir) -> void {
       T eScal = 1;
       while(true) {
-        MyVector<T> betaN = beta + eScal * eDir;
+        MyVector<T> betaN = beta + eScal * edir;
         T eValN = f(betaN);
         if (eValN > eVal) {
           beta = betaN;
