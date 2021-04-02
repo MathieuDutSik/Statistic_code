@@ -28,11 +28,17 @@
           = sum_i g(b_i - sum_j beta_j M(i,j) )
   dF/dbeta_k = sum_i - M(i,k) g'(b_i - sum_j beta_j M(i,j) )
   d^2F(dbeta_k dbeta_l) = sum_i  M(i,k) M(i,l) g''(b_i - sum_j beta_j M(i,j) )
+  ---
+  The function is expressed as
+  f(h) = a + b h + Q[h] / 2
+  f(h_0 + h) = a + b h_0 + bh + Q[h_0] + 2h_0 Q h + Q[h]
+             = C + (b + h_0 Q) h + Q[h]
+  The direction is computed as - b Q^{-1}
  */
 template<typename T>
-std::vector<T> Computre_Regression(MyVector<T> const& B, MyMatrix<T> const& M, double const& sigma)
+std::vector<T> Compute_CorrEntropy_Regression(MyVector<T> const& B, MyMatrix<T> const& M, double const& sigma)
 {
-  double alpha = -1 / (2 * sigma * sigma);
+  double alpha = 1 / (2 * sigma * sigma);
   auto g=[&](T const& x) -> T {
     return exp(- alpha  * x * x);
   };
@@ -85,7 +91,43 @@ std::vector<T> Computre_Regression(MyVector<T> const& B, MyMatrix<T> const& M, d
     }
     return Hess;
   };
-
+  //
+  // The iteration algorithm
+  //
+  MyVector<T> beta = ZeroVector<T>(m);
+  int n_iter = 100;
+  int i_iter=0;
+  while(true) {
+    T val = f(beta);
+    std::cerr << "i_iter=" << i_iter << " val=" << val << "\n";
+    T eFact = 0.8;
+    auto DirUpgrade=[&](MyVector<T> const& edir) -> {
+      T eScal = 1;
+      while(true) {
+        MyVector<T> betaN = beta + eScal * eDir;
+        T eValN = f(betaN);
+        if (eValN > eVal) {
+          beta = betaN;
+          break;
+        }
+        eScal *= eFact;
+      }
+    };
+    //
+    MyVector<T> grad = ComputeGradient(beta);
+    MyMatrix<T> hess = ComputeHessian(beta);
+    MyVector<T> dir = - hess.colPivHouseholderQr().solve(grad);
+    T eScal = dir.dot(grad);
+    if (eScal > 0)
+      DirUpgrade(dir);
+    else
+      DirUpgrade(grad);
+    //
+    i_iter++;
+    if (i_iter == n_iter)
+      break;
+  }
+  return beta;
 }
 
 
