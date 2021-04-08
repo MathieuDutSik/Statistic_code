@@ -41,6 +41,7 @@ MyVector<T> Compute_CorrEntropy_Regression(MyVector<T> const& B, MyMatrix<T> con
   int n = M.rows();
   int m = M.cols();
   int n_B = B.size();
+  std::cerr << "n=" << n << " m=" << m << " n_B=" << n_B << "\n";
   if (n != n_B) {
     std::cerr << "We should have n=" << n << " n_B=" << n_B << " equal\n";
     throw TerminalException{1};
@@ -107,27 +108,38 @@ MyVector<T> Compute_CorrEntropy_Regression(MyVector<T> const& B, MyMatrix<T> con
     T eVal = f(beta);
     std::cerr << "i_iter=" << i_iter << " eVal=" << eVal << "\n";
     T eFact = 0.8;
-    auto DirUpgrade=[&](MyVector<T> const& edir) -> void {
+    auto DirUpgrade=[&](MyVector<T> const& edir) -> bool {
       T eScal = 1;
+      int itermax = 1000;
+      int iter=0;
       while(true) {
         MyVector<T> betaN = beta + eScal * edir;
         T eValN = f(betaN);
+        //        std::cerr << "   eScal=" << eScal << " eVal=" << eVal << " eValN=" << eValN << "\n";
         if (eValN > eVal) {
           beta = betaN;
-          break;
+          return true;
         }
         eScal *= eFact;
+        iter++;
+        if (iter > itermax)
+          return false;
       }
     };
     //
     MyVector<T> grad = ComputeGradient(beta);
     MyMatrix<T> hess = ComputeHessian(beta);
     MyVector<T> dir = - hess.colPivHouseholderQr().solve(grad);
+    //    std::cerr << "We have dir\n";
     T eScal = dir.dot(grad);
+    //    std::cerr << "We have eScal\n";
+    bool reply;
     if (eScal > 0)
-      DirUpgrade(dir);
+      reply = DirUpgrade(dir);
     else
-      DirUpgrade(grad);
+      reply = DirUpgrade(grad);
+    if (!reply)
+      break;
     //
     i_iter++;
     if (i_iter == n_iter)

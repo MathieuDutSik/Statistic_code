@@ -18,12 +18,15 @@ int main(int argc, char *argv[])
     std::string FileO = argv[2];
     std::ifstream is(FileI);
     T sigma;
+    is >> sigma;
     MyVector<T> B = ReadVector<T>(is);
     MyMatrix<T> M = ReadMatrix<T>(is);
     MyVector<T> Beta = Compute_CorrEntropy_Regression(B, M, sigma);
     //
     std::ofstream os(FileO);
-    WriteVector(os, Beta);
+    int len = Beta.size();
+    for (int i=0; i<len; i++)
+      os << Beta(i) << "\n";
   }
   catch (TerminalException const& e) {
     exit(e.eVal);
